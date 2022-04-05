@@ -28,7 +28,7 @@ class Run(object):
         logging.info("PeersManager Started")
         logging.info("PiecesManager Started")
 
-    def restart():
+    def restart(self):
 
             logging.info("Я рестартую")
 
@@ -41,13 +41,14 @@ class Run(object):
         self.peers_manager.add_peers(peers_dict.values())
 
         while not self.pieces_manager.all_pieces_completed():
-            if not self.peers_manager.has_unchoked_peers():
-                time.sleep(1)
-                logging.info("No unchocked peers")
+            broken_peer = self.peers_manager.has_no_unchoked_peers()
+            if broken_peer != None:
                 no_unchoke_time+=1
                 if no_unchoke_time > 5:
-                    self.restart()
+                    self.peers_manager.restart_peer()
                     no_unchoke_time=0
+                    if not self.peers_manager.has_unchoked_peers():
+                        logging.error("I am broked...")
                 continue
 
             for piece in self.pieces_manager.pieces:

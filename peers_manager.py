@@ -60,9 +60,26 @@ class PeersManager(Thread):
             if peer.is_unchoked():
                 return True
             else:
-                remove_peer()
-            
+                pass
+
         return False
+
+    def has_no_unchoked_peers(self):
+        for peer in self.peers:
+            if peer.is_unchoked():
+                continue
+            else:
+                # logging.info("has_no_unchoked_peers")
+                # logging.info(peer)
+                return peer
+                # self.remove_peer(peer)
+        return None
+
+
+    def restart_peer(self):
+        pass
+        # if self.has_unchoked_peers():
+        #     http_scraper(torrent, tracker, True)
 
     def unchoked_peers_count(self):
         cpt = 0

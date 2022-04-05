@@ -13,7 +13,7 @@ import socket
 from urllib.parse import urlparse
 
 MAX_PEERS_TRY_CONNECT = 30
-MAX_PEERS_CONNECTED = 16
+MAX_PEERS_CONNECTED = 4
 
 
 class SockAddr:
@@ -105,7 +105,7 @@ class Tracker(object):
 
                 '''
 
-                logging.info(len(list_peers['peers'])//6)
+                # logging.info(len(list_peers['peers'])//6)
                 if  (alonepeer == False):
 
                         countpeer=len(list_peers['peers'])//6
