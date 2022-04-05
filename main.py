@@ -36,12 +36,12 @@ class Run(object):
 
     def restart_peer(self):
         peers_dict = self.tracker.get_peers_from_trackers(True)
-        self.peers_manager.add_peers(peers_dict.values())
+        # self.peers_manager.add_peers(peers_dict.values())
 
     def start(self):
         global no_unchoke_time
         peers_dict = self.tracker.get_peers_from_trackers(alonepeer=False)
-        self.peers_manager.add_peers(peers_dict.values())
+        self.peers_manager.add_peers(peers_dict.values(),alonepeer=False)
 
         while not self.pieces_manager.all_pieces_completed():
             broken_peer = self.peers_manager.has_no_unchoked_peers()

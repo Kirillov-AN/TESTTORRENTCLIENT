@@ -13,6 +13,8 @@ import errno
 import socket
 import random
 
+count_peer = 0
+
 
 class PeersManager(Thread):
     def __init__(self, torrent, pieces_manager):
@@ -141,12 +143,18 @@ class PeersManager(Thread):
 
         return False
 
-    def add_peers(self, peers):
-        for peer in peers:
-            if self._do_handshake(peer):
-                self.peers.append(peer)
-            else:
-                print("Error _do_handshake")
+    def add_peers(self, peers,alonepeer = False):
+        global count_peer
+        if alonepeer == False:
+            for peer in peers:
+                count_peer += 1
+                if self._do_handshake(peer):
+                    self.peers.append(peer)
+                else:
+                    print("Error _do_handshake")
+        else:
+            pass
+        # начать цикл с count_peer
 
     def remove_peer(self, peer):
         if peer in self.peers:
