@@ -28,16 +28,19 @@ class Run(object):
         logging.info("PeersManager Started")
         logging.info("PiecesManager Started")
 
-    def restart(self):
+    # def restart(self):
+    #     logging.info("Я рестартую")
+    #
+    #     peers_dict = self.tracker.get_peers_from_trackers(True)
+    #     self.peers_manager.add_peers(peers_dict.values())
 
-            logging.info("Я рестартую")
-
-            peers_dict = self.tracker.get_peers_from_trackers(True)
-            self.peers_manager.add_peers(peers_dict.values())
+    def restart_peer(self):
+        peers_dict = self.tracker.get_peers_from_trackers(True)
+        self.peers_manager.add_peers(peers_dict.values())
 
     def start(self):
         global no_unchoke_time
-        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=True)
+        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=False)
         self.peers_manager.add_peers(peers_dict.values())
 
         while not self.pieces_manager.all_pieces_completed():
@@ -45,7 +48,7 @@ class Run(object):
             if broken_peer != None:
                 no_unchoke_time+=1
                 if no_unchoke_time > 5:
-                    self.peers_manager.restart_peer()
+                    # self.restart_peer()
                     no_unchoke_time=0
                     if not self.peers_manager.has_unchoked_peers():
                         logging.error("I am broked...")

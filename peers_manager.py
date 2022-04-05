@@ -75,12 +75,6 @@ class PeersManager(Thread):
                 # self.remove_peer(peer)
         return None
 
-
-    def restart_peer(self):
-        pass
-        # if self.has_unchoked_peers():
-        #     http_scraper(torrent, tracker, True)
-
     def unchoked_peers_count(self):
         cpt = 0
         for peer in self.peers:
@@ -112,6 +106,7 @@ class PeersManager(Thread):
         return data
 
     def run(self):
+        print("Я запустил run")
         while self.is_active:
             read = [peer.socket for peer in self.peers]
             read_list, _, _ = select.select(read, [], [], 1)

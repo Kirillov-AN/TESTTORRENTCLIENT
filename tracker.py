@@ -121,9 +121,10 @@ class Tracker(object):
                     s = SockAddr(ip,port)
                     self.dict_sock_addr[s.__hash__()] = s
             else:
-                for p in list_peers['peers']:
-                    s = SockAddr(p['ip'], p['port'])
-                    self.dict_sock_addr[s.__hash__()] = s
+                pass
+                # for p in list_peers['peers']:
+                #     s = SockAddr(p['ip'], p['port'])
+                #     self.dict_sock_addr[s.__hash__()] = s
 
         except Exception as e:
             logging.exception("HTTP scraping failed: %s" % e.__str__())
