@@ -34,21 +34,24 @@ class Run(object):
     #     peers_dict = self.tracker.get_peers_from_trackers(True)
     #     self.peers_manager.add_peers(peers_dict.values())
 
-    def restart_peer(self):
-        peers_dict = self.tracker.get_peers_from_trackers(True)
+    def restart_peer(self, broken_peer_key):
+        peers_dict = self.tracker.get_peers_from_trackers(1, self.peers_manager.peers)
+        peers_dict_keys = list(peers_dict.keys())
+        self.peers_manager.peers[broken_peer_key] = peers_dict[peers_dict_keys[len(peers_dict_keys)-1]]
+
         # self.peers_manager.add_peers(peers_dict.values())
 
     def start(self):
         global no_unchoke_time
-        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=False)
-        self.peers_manager.add_peers(peers_dict.values(),alonepeer=False)
+        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=0)
+        self.peers_manager.add_peers(peers_dict.values(),alonepeer=0)
 
         while not self.pieces_manager.all_pieces_completed():
-            broken_peer = self.peers_manager.has_no_unchoked_peers()
-            if broken_peer != None:
+            broken_peer_key = self.peers_manager.has_no_unchoked_peers()
+            if broken_peer_key != None:
                 no_unchoke_time+=1
                 if no_unchoke_time > 5:
-                    # self.restart_peer()
+                    self.restart_peer(broken_peer_key)
                     no_unchoke_time=0
                     if not self.peers_manager.has_unchoked_peers():
                         logging.error("I am broked...")

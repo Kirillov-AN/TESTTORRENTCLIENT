@@ -67,13 +67,14 @@ class PeersManager(Thread):
         return False
 
     def has_no_unchoked_peers(self):
-        for peer in self.peers:
+        for peek_key in range(0,len(self.peers)):
+            peer = self.peers[peek_key]
             if peer.is_unchoked():
                 continue
             else:
                 # logging.info("has_no_unchoked_peers")
                 # logging.info(peer)
-                return peer
+                return peek_key
                 # self.remove_peer(peer)
         return None
 
@@ -143,9 +144,9 @@ class PeersManager(Thread):
 
         return False
 
-    def add_peers(self, peers,alonepeer = False):
+    def add_peers(self, peers, alonepeer=0):
         global count_peer
-        if alonepeer == False:
+        if alonepeer == 0:
             for peer in peers:
                 count_peer += 1
                 if self._do_handshake(peer):

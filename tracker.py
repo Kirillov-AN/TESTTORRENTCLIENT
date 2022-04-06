@@ -25,6 +25,7 @@ class SockAddr:
     def __hash__(self):
         return "%s:%d" % (self.ip, self.port)
 
+counter_peers = 0
 
 class Tracker(object):
     def __init__(self, torrent):
@@ -33,7 +34,7 @@ class Tracker(object):
         self.connected_peers = {}
         self.dict_sock_addr = {}
 
-    def get_peers_from_trackers(self,alonepeer):
+    def get_peers_from_trackers(self,alonepeer,list_added_peers=[]):
         for i, tracker in enumerate(self.torrent.announce_list):
             if len(self.dict_sock_addr) >= MAX_PEERS_TRY_CONNECT:
                 break
@@ -55,29 +56,50 @@ class Tracker(object):
             else:
                 logging.error("unknown scheme for: %s " % tracker_url)
 
-        self.try_peer_connect()
+        while not self.try_peer_connect(alonepeer,list_added_peers):
+            pass
 
         return self.connected_peers
 
-    def try_peer_connect(self,alonepeer=0):
+    def try_peer_connect(self,alonepeer=0,list_added_peers=[]): # для alonepeer == 1 выбрать ключ из словаря!!!
         logging.info("Trying to connect to %d peer(s)" % len(self.dict_sock_addr))
 
-        for _, sock_addr in self.dict_sock_addr.items():
-            logging.error("ВНИМАНИЕ")
+        if alonepeer==0:
+            for _, sock_addr in self.dict_sock_addr.items():
+                logging.error("ВНИМАНИЕ")
 
-            if len(self.connected_peers) >= MAX_PEERS_CONNECTED and alonepeer==0:
-                break
+                if len(self.connected_peers) >= MAX_PEERS_CONNECTED and alonepeer==0:
+                    break
+
+                new_peer = peer.Peer(int(self.torrent.number_of_pieces), sock_addr.ip, sock_addr.port)
+                if not new_peer.connect():
+                    continue
+
+                print('Connected to %d/%d peers' % (len(self.connected_peers), MAX_PEERS_CONNECTED))
+
+                self.connected_peers[new_peer.__hash__()] = new_peer
+                return True
+        elif alonepeer == 1:
+            dict_sock_addr_list = list(self.dict_sock_addr.keys())
+            _ = dict_sock_addr_list[len(dict_sock_addr_list)-1] # получаем ключ для словаря для одинокого пира
+            sock_addr = self.dict_sock_addr[_]
 
             new_peer = peer.Peer(int(self.torrent.number_of_pieces), sock_addr.ip, sock_addr.port)
             if not new_peer.connect():
-                continue
+                logging.info("Не удалось подключиться к новому пиру!!!")
+                return False
 
-            print('Connected to %d/%d peers' % (len(self.connected_peers), MAX_PEERS_CONNECTED))
+            if new_peer not in list_added_peers:
+                print('Connected to new peer!!!')
+                self.connected_peers[new_peer.__hash__()] = new_peer
+                return True
+            else:
+                return False
+        else:
+            return False
 
-            self.connected_peers[new_peer.__hash__()] = new_peer
-
-    def http_scraper(self, torrent, tracker,alonepeer=False):
-        countpeer=0
+    def http_scraper(self, torrent, tracker,alonepeer=0):  # проверка на сетевую ошибку
+        global counter_peers
         logging.info("ЗАПУЩЕНА ФУНКЦИЯ ОБРАЩЕНИЯ К ТРЕКЕРУ ПО ХТТП ")
         params = {
             'info_hash': torrent.info_hash,
@@ -106,20 +128,42 @@ class Tracker(object):
                 '''
 
                 # logging.info(len(list_peers['peers'])//6)
-                if  (alonepeer == False):
-
-                        countpeer=len(list_peers['peers'])//6
+                countpeer=0
+                if  (alonepeer == 0):
+                    countpeer=len(list_peers['peers'])//6
+                elif (alonepeer == 1):
+                    countpeer=1
                 else:
-                        countpeer=1
-                for _ in range(countpeer):
-                    logging.info("ИТЕРАЦИЯ")
-                    ip = struct.unpack_from("!i", list_peers['peers'], offset)[0]
-                    ip = socket.inet_ntoa(struct.pack("!i", ip))
-                    offset += 4
-                    port = struct.unpack_from("!H",list_peers['peers'], offset)[0]
-                    offset += 2
-                    s = SockAddr(ip,port)
-                    self.dict_sock_addr[s.__hash__()] = s
+                    pass
+                start_value = counter_peers
+                end_value = counter_peers + countpeer
+                if (end_value <= len(list_peers['peers'])):
+                    for _ in range(start_value, end_value):
+                        counter_peers+=1
+                        logging.info("ИТЕРАЦИЯ")
+                        ip = struct.unpack_from("!i", list_peers['peers'], offset)[0]
+                        ip = socket.inet_ntoa(struct.pack("!i", ip))
+                        offset += 4
+                        port = struct.unpack_from("!H",list_peers['peers'], offset)[0]
+                        offset += 2
+                        s = SockAddr(ip,port)
+                        self.dict_sock_addr[s.__hash__()] = s
+                else:
+                    logging.info("Ошибка итерации в list_peers!!! Сбрасываю счетчик!!!")
+                    counter_peers = 0
+                    start_value = counter_peers
+                    end_value = counter_peers + countpeer
+                    for _ in range(start_value, end_value):
+                        counter_peers+=1
+                        logging.info("ИТЕРАЦИЯ")
+                        ip = struct.unpack_from("!i", list_peers['peers'], offset)[0]
+                        ip = socket.inet_ntoa(struct.pack("!i", ip))
+                        offset += 4
+                        port = struct.unpack_from("!H",list_peers['peers'], offset)[0]
+                        offset += 2
+                        s = SockAddr(ip,port)
+                        self.dict_sock_addr[s.__hash__()] = s
+
             else:
                 pass
                 # for p in list_peers['peers']:
