@@ -109,7 +109,8 @@ class PeersManager(Thread):
         return data
 
     def run(self):
-        print("Я запустил run")
+        logging.exception("Я запустил run")
+
         while self.is_active:
             read = [peer.socket for peer in self.peers]
             read_list, _, _ = select.select(read, [], [], 1)
@@ -124,6 +125,7 @@ class PeersManager(Thread):
                     payload = self._read_from_socket(socket)
                 except Exception as e:
                     logging.error("Recv failed %s" % e.__str__())
+                    logging.exception("УБИВАЮ ПИРЫ!!!")
                     self.remove_peer(peer)
                     continue
 
@@ -144,8 +146,24 @@ class PeersManager(Thread):
 
         return False
 
+    # def add_peers(self, peers, alonepeer=0):
+    #     global count_peer
+    #     if alonepeer == 0:
+    #         for peer in peers:
+    #             count_peer += 1
+    #             if self._do_handshake(peer):
+    #                 self.peers.append(peer)
+    #             else:
+    #                 print("Error _do_handshake")
+    #     else:
+    #         pass
+    #     # начать цикл с count_peer
+
     def add_peers(self, peers, alonepeer=0):
         global count_peer
+        if peers == []:
+            return False
+
         if alonepeer == 0:
             for peer in peers:
                 count_peer += 1
@@ -154,8 +172,18 @@ class PeersManager(Thread):
                 else:
                     print("Error _do_handshake")
         else:
-            pass
-        # начать цикл с count_peer
+            peers = peers[count_peer::]
+            while True:
+              count_peer += 1
+              if self._do_handshake(peer):
+                    self.peers.append(peer)
+                    count_peer=0
+                    peers = peers[1::]
+                    return True
+              else:
+                    print("Error _do_handshake")
+                    peers = peers[1::]
+
 
     def remove_peer(self, peer):
         if peer in self.peers:
