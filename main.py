@@ -28,27 +28,33 @@ class Run(object):
         logging.info("PeersManager Started")
         logging.info("PiecesManager Started")
 
-    def restart():
+    def restart_peer(self,broken_peer_key):
 
-            logging.info("Я рестартую")
-
+            logging.info("Я рестартую и удаляю")
+            logging.info(broken_peer_key)
+            self.tracker.remove_connected_peer(broken_peer_key)
             peers_dict = self.tracker.get_peers_from_trackers(True)
+            logging.error("Количество пиров на добавление")
+            logging.error(len(peers_dict))
+
             self.peers_manager.add_peers(peers_dict.values())
 
     def start(self):
         global no_unchoke_time
-        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=True)
-        self.peers_manager.add_peers(peers_dict.values())
+        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=0)
+        self.peers_manager.add_peers(peers_dict)
 
         while not self.pieces_manager.all_pieces_completed():
-            if not self.peers_manager.has_unchoked_peers():
-                time.sleep(1)
-                logging.info("No unchocked peers")
+            broken_peer_key = self.peers_manager.has_no_unchoked_peers()
+            if broken_peer_key != None:
                 no_unchoke_time+=1
-                if no_unchoke_time > 5:
-                    self.restart()
+                if no_unchoke_time > 3:
+                    self.restart_peer(broken_peer_key)
                     no_unchoke_time=0
+                    if not self.peers_manager.has_unchoked_peers():
+                        logging.error("I am broked...")
                 continue
+
 
             for piece in self.pieces_manager.pieces:
                 index = piece.piece_index

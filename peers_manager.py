@@ -18,6 +18,7 @@ class PeersManager(Thread):
     def __init__(self, torrent, pieces_manager):
         Thread.__init__(self)
         self.peers = []
+        self.peers_dict = {}
         self.torrent = torrent
         self.pieces_manager = pieces_manager
         self.rarest_pieces = rarest_piece.RarestPieces(pieces_manager)
@@ -60,9 +61,21 @@ class PeersManager(Thread):
             if peer.is_unchoked():
                 return True
             else:
-                remove_peer()
-            
+                pass
         return False
+    def has_no_unchoked_peers(self):
+        for peek_key in range(0,len(self.peers)):
+            peer = self.peers[peek_key]
+            if peer.is_unchoked():
+                continue
+            else:
+                # logging.info("has_no_unchoked_peers")
+                logging.info("нашел сломанный  пир")
+                logging.exception(peer)
+                i = hash(peer)
+                return i
+                # self.remove_peer(peer)
+        return None
 
     def unchoked_peers_count(self):
         cpt = 0
@@ -129,12 +142,18 @@ class PeersManager(Thread):
 
         return False
 
-    def add_peers(self, peers):
-        for peer in peers:
-            if self._do_handshake(peer):
-                self.peers.append(peer)
+    def add_peers(self, peersv):
+        self.peers_dict = peersv
+        peersv = peersv.value()
+        for key in peersv:
+            value = peersv[key]
+            if self._do_handshake(value):
+                self.peers.append(value)
+                self.peers_dict[key] = value
             else:
                 print("Error _do_handshake")
+
+
 
     def remove_peer(self, peer):
         if peer in self.peers:
