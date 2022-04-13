@@ -4,7 +4,6 @@ import peer
 from message import UdpTrackerConnection, UdpTrackerAnnounce, UdpTrackerAnnounceOutput
 from peers_manager import PeersManager
 
-__author__ = 'alexisgallepe'
 
 import requests
 import logging
@@ -13,7 +12,7 @@ import socket
 from urllib.parse import urlparse
 
 MAX_PEERS_TRY_CONNECT = 30
-MAX_PEERS_CONNECTED = 2
+MAX_PEERS_CONNECTED = 8
 
 
 class SockAddr:
@@ -33,30 +32,16 @@ class Tracker(object):
         self.connected_peers = {}
         self.dict_sock_addr = {}
 
-
-
-    def remove_connected_peer(self,peer_c):
-        del dict[peer_c]
-
-
-    def get_peers_from_trackers(self,alonepeer):
-        self.dict_sock_addr={}
-        logging.error("ЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЛЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕНННННННННННННН")
-        logging.error(len(self.dict_sock_addr))
-
+    def get_peers_from_trackers(self,alonepeer=False):
         for i, tracker in enumerate(self.torrent.announce_list):
-
-
             if len(self.dict_sock_addr) >= MAX_PEERS_TRY_CONNECT:
-
-
                 break
 
             tracker_url = tracker[0]
 
             if str.startswith(tracker_url, "http"):
                 try:
-                    self.http_scraper(self.torrent, tracker_url,alonepeer)
+                    self.http_scraper(self.torrent, tracker_url)
                 except Exception as e:
                     logging.error("HTTP scraping failed: %s " % e.__str__())
 
@@ -68,21 +53,16 @@ class Tracker(object):
 
             else:
                 logging.error("unknown scheme for: %s " % tracker_url)
-        logging.error("Дошел до трай пир коннект")
+
         self.try_peer_connect(alonepeer=alonepeer)
 
         return self.connected_peers
 
-    def try_peer_connect(self,alonepeer=0):
+    def try_peer_connect(self,alonepeer):
         logging.info("Trying to connect to %d peer(s)" % len(self.dict_sock_addr))
-        countiter=0
+
         for _, sock_addr in self.dict_sock_addr.items():
-
-
             if len(self.connected_peers) >= MAX_PEERS_CONNECTED:
-                for k in self.connected_peers:
-                    logging.error("Сработала глушилка")
-                    logging.error(k)
                 break
 
             new_peer = peer.Peer(int(self.torrent.number_of_pieces), sock_addr.ip, sock_addr.port)
@@ -92,16 +72,11 @@ class Tracker(object):
             print('Connected to %d/%d peers' % (len(self.connected_peers), MAX_PEERS_CONNECTED))
 
             self.connected_peers[new_peer.__hash__()] = new_peer
-            countiter+=1
-            logging.error("Количество Итераций трай пир коннект")
-            logging.error(countiter)
-            if alonepeer==1:
-                countiter=0
+
+            if alonepeer ==True:
                 break
 
     def http_scraper(self, torrent, tracker,alonepeer=False):
-        countpeer=0
-        logging.info("ЗАПУЩЕНА ФУНКЦИЯ ОБРАЩЕНИЯ К ТРЕКЕРУ ПО ХТТП ")
         params = {
             'info_hash': torrent.info_hash,
             'peer_id': torrent.peer_id,
@@ -125,16 +100,8 @@ class Tracker(object):
                         - Next 2 bytes are for port number
                     - To unpack initial 4 bytes !i (big-endian, 4 bytes) is used.
                     - To unpack next 2 byets !H(big-endian, 2 bytes) is used.
-
                 '''
-
-                logging.info(len(list_peers['peers'])//6)
-                if  (alonepeer == False):
-
-                        countpeer=len(list_peers['peers'])//6
-                else:
-                        countpeer=1
-                for _ in range(countpeer):
+                for _ in range(len(list_peers['peers'])//6):
                     ip = struct.unpack_from("!i", list_peers['peers'], offset)[0]
                     ip = socket.inet_ntoa(struct.pack("!i", ip))
                     offset += 4
@@ -142,14 +109,10 @@ class Tracker(object):
                     offset += 2
                     s = SockAddr(ip,port)
                     self.dict_sock_addr[s.__hash__()] = s
-                    logging.error("Длина сок адрес")
-                    logging.error(len(self.dict_sock_addr))
             else:
                 for p in list_peers['peers']:
                     s = SockAddr(p['ip'], p['port'])
                     self.dict_sock_addr[s.__hash__()] = s
-                    logging.error("Длина сок адрес")
-                    logging.error(len(self.dict_sock_addr))
 
         except Exception as e:
             logging.exception("HTTP scraping failed: %s" % e.__str__())

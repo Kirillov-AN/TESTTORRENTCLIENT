@@ -11,7 +11,6 @@ import logging
 import os
 import message
 
-no_unchoke_time=0
 
 class Run(object):
     percentage_completed = -1
@@ -28,33 +27,30 @@ class Run(object):
         logging.info("PeersManager Started")
         logging.info("PiecesManager Started")
 
-    def restart_peer(self,broken_peer_key):
 
-            logging.info("Я рестартую и удаляю")
-            logging.info(broken_peer_key)
-            self.tracker.remove_connected_peer(broken_peer_key)
-            peers_dict = self.tracker.get_peers_from_trackers(True)
-            logging.error("Количество пиров на добавление")
-            logging.error(len(peers_dict))
 
-            self.peers_manager.add_peers(peers_dict.values())
+    def restart_peer(self):
+        self.torrent = torrent.Torrent().load_from_path("torrent.torrent")
+        self.tracker = tracker.Tracker(self.torrent)
+        peers_dict = self.tracker.get_peers_from_trackers()
+        self.peers_manager.add_peers(peers_dict.values())
+        logging.error("Количество пиров на добавление")
+        logging.error(len(peers_dict))
 
     def start(self):
-        global no_unchoke_time
-        peers_dict = self.tracker.get_peers_from_trackers(alonepeer=0)
-        self.peers_manager.add_peers(peers_dict)
+        peers_dict = self.tracker.get_peers_from_trackers()
+        self.peers_manager.add_peers(peers_dict.values())
 
         while not self.pieces_manager.all_pieces_completed():
-            broken_peer_key = self.peers_manager.has_no_unchoked_peers()
-            if broken_peer_key != None:
-                no_unchoke_time+=1
-                if no_unchoke_time > 3:
-                    self.restart_peer(broken_peer_key)
-                    no_unchoke_time=0
-                    if not self.peers_manager.has_unchoked_peers():
-                        logging.error("I am broked...")
-                continue
+            time.sleep(8)
+            count_peers = self.peers_manager.unchoked_peers_count()
+            logging.info("Сейчас доступно %d   пиров" % count_peers)
 
+            if count_peers < 4:
+
+                logging.info("Рестартую")
+                self.restart_peer()
+                continue
 
             for piece in self.pieces_manager.pieces:
                 index = piece.piece_index
